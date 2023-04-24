@@ -16,4 +16,17 @@ say N is 10
 
 ### v2
 
-support level exit, and passing positional parameters to inner queries
+adds support for level exit, and passing positional parameters to inner queries
+
+```EXECUTE FUNCTION rcte("SELECT e.*,0 as elevel FROM `rcte`._default.employees e WHERE e.reportsTo IS MISSING", "SELECT e.*, m.elevel+1 as elevel FROM `rcte`._default.employees e JOIN $1 m ON m.name=e.reportsTo",{});```
+
+```SELECT e.*, rcte("SELECT e1.*,0 as rlevel FROM `rcte`._default.employees e1 WHERE e1.reportsTo=$1" , "SELECT e2.*, m.rlevel+1 as rlevel FROM $1 m, `rcte`._default.employees e2 WHERE m.name=e2.reportsTo" , { "anchorArgs":[e.name], "levelLimit":1}) as reportsToHierarchy  FROM `rcte`._default.employees e;```
+
+
+### v3
+
+add support for cycle detection
+
+```EXECUTE FUNCTION rcte("SELECT 0 as depth, 1 as _from, 1 as _to" , 
+   "SELECT m.depth+1 as depth, c._from, c._to FROM $1 m, `rcte`._default.cycleData c WHERE c._from = m._to", 
+  {"log":true, "cycleFields":["_from", "_to"]});```
