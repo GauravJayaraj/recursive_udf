@@ -1,10 +1,32 @@
-function recursive_cte(anchor , recursive, log) {
+function recursive_cte(anchor , recursive, config) {
     let isLog = false;
+    let anchorArgs=[];
+    let recursiveArgs=[];
+    let levelLimit = -1;
+    // if(log!=undefined && log==true)
+    //     isLog = true;
 
-    if(log!=undefined && log==true)
-        isLog = true;
+    if(config!=undefined) {
+        if(config.log!=undefined && config.log==true) {
+            isLog = true;
+        }
+
+        if(config.anchorArgs!=undefined) {
+            anchorArgs = config.anchorArgs;
+        }
+
+        if(config.recursiveArgs!=undefined) {
+            recursiveArgs = config.recursiveArgs;
+        }
+
+        if(config.levelLimit!=undefined && config.levelLimit>0) {
+            levelLimit = config.levelLimit;
+        }
+    }
     
     let res = {"res":[], "log":[]}
+    // init state
+    recursiveArgs.push(0);
     
     // Prepare anchor statement
     let anchorPname = "";
@@ -18,9 +40,8 @@ function recursive_cte(anchor , recursive, log) {
 
         res['log'].push("prepared anchor");
     }
-    catch(err) {
+    catch {
         res['log'].push("couldn't prepare anchor");
-        res['log'].push(err);
         return isLog?res:res['res'];
     }
 
@@ -30,14 +51,14 @@ function recursive_cte(anchor , recursive, log) {
     let workSet = []
 
     try{
-        const anchorExec = N1QL("EXECUTE `"+anchorPname+"`");
+        const anchorExec = N1QL("EXECUTE `"+anchorPname+"`",anchorArgs);
         for(const doc of anchorExec) {
             workSet.push(doc);
         }
     }
-    catch(err){
+    catch(err) {
         res['log'].push("failed to execute anchor");
-        res['log'].push("err");
+        res['log'].push(err)
         return isLog?res:res['res'];
     }
 
@@ -60,26 +81,37 @@ function recursive_cte(anchor , recursive, log) {
     }
     catch(err) {
         res['log'].push("couldn't prepare recursive");
-        res['log'].push(err)
+        res['log'].push(err);
         return isLog?res:res['res'];
     }
 
     let level = 0;
 
     while(workSet.length!=0) {
+
+        // exit on level condition
+        if(levelLimit>0 && level>=levelLimit) {
+            res['log'].push("Exit on level condition: levelLimit="+levelLimit.toString())
+            break;
+        }
+
         // execute recursive query
         let newWorkSet = []
+
+        // set state $1
+        recursiveArgs[0] = workSet;
+
         try{
-            const recursiveExec = N1QL("EXECUTE `"+recursivePname+"`", workSet)
+            const recursiveExec = N1QL("EXECUTE `"+recursivePname+"`", recursiveArgs)
 
             // empty workSet to populate again
             for(const doc of recursiveExec) {
                 newWorkSet.push(doc)
             }
         }
-        catch(err) {
+        catch(err){
             res['log'].push("failed execute recursive");
-            res['log'].push(err);
+            res['log'].push(err)
         }
 
         if(newWorkSet.length==0)
@@ -87,6 +119,8 @@ function recursive_cte(anchor , recursive, log) {
         
         res["res"].push(...newWorkSet);
         workSet = newWorkSet;
+
+        level++;
     }
 
     return isLog?res:res['res'];
