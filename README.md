@@ -33,6 +33,9 @@ add support for cycle detection
 ### v4
 
 catch and throw errors where required
-add utility to display explain in log
+add utility to display explain results in log
 
 ```EXECUTE FUNCTION rcte("SELECT 0 as depth, 1 as _from, 1 as _to" , "SELECT m.depth+1 as depth, c._from, c._to FROM $1 m, `rcte`._default.cycleData c WHERE c._from = m._to", {"log":true, "cycleFields":["_from", "_to"], "explain":true});```
+
+### v5
+save query plan from result of PREPARE STATEMENT instead of re-executing explain
