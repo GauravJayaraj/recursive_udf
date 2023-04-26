@@ -27,6 +27,12 @@ adds support for level exit, and passing positional parameters to inner queries
 
 add support for cycle detection
 
-```EXECUTE FUNCTION rcte("SELECT 0 as depth, 1 as _from, 1 as _to" , 
-   "SELECT m.depth+1 as depth, c._from, c._to FROM $1 m, `rcte`._default.cycleData c WHERE c._from = m._to", 
-  {"log":true, "cycleFields":["_from", "_to"]});```
+```EXECUTE FUNCTION rcte("SELECT 0 as depth, 1 as _from, 1 as _to" , "SELECT m.depth+1 as depth, c._from, c._to FROM $1 m, `rcte`._default.cycleData c WHERE c._from = m._to", {"log":true, "cycleFields":["_from", "_to"]});```
+
+
+### v4
+
+catch and throw errors where required
+add utility to display explain in log
+
+```EXECUTE FUNCTION rcte("SELECT 0 as depth, 1 as _from, 1 as _to" , "SELECT m.depth+1 as depth, c._from, c._to FROM $1 m, `rcte`._default.cycleData c WHERE c._from = m._to", {"log":true, "cycleFields":["_from", "_to"], "explain":true});```
