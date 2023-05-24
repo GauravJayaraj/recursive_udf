@@ -70,7 +70,7 @@ function recursive_cte(anchor , recursive, log) {
         // execute recursive query
         let newWorkSet = []
         try{
-            const recursiveExec = N1QL("EXECUTE `"+recursivePname+"`", workSet)
+            const recursiveExec = N1QL("EXECUTE `"+recursivePname+"`", [workSet])
 
             // empty workSet to populate again
             for(const doc of recursiveExec) {
